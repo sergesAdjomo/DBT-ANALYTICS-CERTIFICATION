@@ -1,0 +1,2 @@
+- Seeds sont des données statiquesqui sont injectées dans la base de donnée pour des tests et des analyses.
+- Ils sont utilisés pour créer des exemples de données pour des tests ou des analyses.

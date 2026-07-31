@@ -1,0 +1,19 @@
+# Les packages sont des ensembles de macros et de modèles qui ajoutent des fonctionnalités supplémentaires à dbt.
+# Chaque package a des fonctionnalités spécifiques et est généralement utilisé pour une tâche spécifique.
+# Voici une courte explication de chaque package :
+# - dbt-labs/codegen : génère du code à partir des modèles dbt, comme des classes de modèle pour langages de programmation spécifiques.
+# - dbt-labs/dbt_utils : fournit des fonctions et des macros utilitaires pour les modèles dbt, comme des fonctions de manipulation de données, des agrégats, des tests, etc.
+
+packages:
+  # The codegen package generates code from dbt models
+  - package: dbt-labs/codegen
+    version: 0.14.1 # Specific version number
+
+  # The dbt_utils package provides utility functions for dbt models
+  - package: dbt-labs/dbt_utils
+    version: 1.4.1 # Specific version number
+
+  # The audit_helper package provides helper macros for auditing dbt models
+  # Example: dbt audit_helper.compare_relations can help compare data between tables drop or add columns etc.
+  - package: dbt-labs/audit_helper
+    version: 0.10.0 # Specific version number

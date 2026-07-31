@@ -1,0 +1,7 @@
+- Snapshots sont des copies de données stockées dans la base de données, qui sont prises à un moment précis.
+- Ils sont utilisés pour stocker des données d'état à un moment précis dans le temps, par exemple, pour une analyse historique ou pour stocker un état de la base de données à un moment donné.
+- Ils sont également utilisés pour stocker des données de production, car ils peuvent être utilisés pour restaurer des données dans la base de données, en les remplaçant complètement.
+- Ils sont créés en utilisant la commande `dbt snapshots snapshot` de dbt.
+- Ils peuvent être utilisés pour stocker des données de production, mais ils ne sont pas utilisés pour les tests unitaires ou les tests d'intégration.
+- Ils sont stockés dans le répertoire `target/snapshots/`.
+- Ils sont utilisés pour restaurer des données dans la base de données, en utilisant la commande `dbt snapshots restore`.

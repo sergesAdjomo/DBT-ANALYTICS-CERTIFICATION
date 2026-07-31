@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: Staging model for transactions
+    columns:
+      - name: hash
+        description: >
+          This is a very long multi-line description of
+          the hash column that spans multiple lines and should be properly formatted in the documentation.
+          It is the identifier of each transaction in the ethereum blockchain.
+        data_tests:
+          - not_null
+          - unique
