@@ -1,4 +1,5 @@
-Welcome to your new dbt project!
+# DBT-ANALYTICS-CERTIFICATION
+PREPARATION A LA CERTIFICATION DBT ANALYTICS ENGINEER
 
 ### Using the starter project
 
