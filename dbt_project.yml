@@ -8,6 +8,11 @@ version: '1.0.0'
 # This setting configures which "profile" dbt uses for this project.
 profile: 'eth'
 
+# Run these SQL statements at the start of every dbt run (e.g. create prod database/schema)
+on-run-start:
+  - "CREATE DATABASE IF NOT EXISTS prod_db"
+  - "CREATE SCHEMA IF NOT EXISTS prod_db.prod_schema"
+
 # Global dbt flags
 # fail_fast: stop the run as soon as one model/test fails, instead of
 # continuing to run all remaining independent nodes in the DAG.
@@ -49,3 +54,5 @@ models:
         - powerbi
         - report
       +schema: marts  
+
+  

@@ -17,3 +17,10 @@
 -- Column generation can be disabled by passing 'generate_columns=False' to the 'codegen.generate_source' function.
 
 {{codegen.generate_model_yaml(['stg_transactions', 'stg_transactions_enriched', 'stablecoin_activity_per_day'])}}
+
+{{target.database}}
+
+{{target.schema}}
+
+{{target.prod}}
+
