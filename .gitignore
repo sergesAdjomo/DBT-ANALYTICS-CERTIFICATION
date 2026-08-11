@@ -1,8 +1,11 @@
 
 target/
+.dbt/
 dbt_packages/
 logs/
 .ssh/id_rsa
 .ssh/id_rsa.pub
+*.p8
+*.pub
 .rsa_key.p8
 .rsa_key.pub

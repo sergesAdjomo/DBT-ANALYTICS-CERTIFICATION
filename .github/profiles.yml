@@ -1,0 +1,33 @@
+eth:
+  outputs:
+    dev:
+      account: BCUXZJM-DV75402
+      database: dbt_db
+      private_key_path: "{{ env_var('DBT_PRIVATE_KEY_PATH') }}"
+      role: ACCOUNTADMIN
+      schema: dbt_schema
+      threads: 1
+      type: snowflake
+      user: adjomo
+      warehouse: compute_wh
+    prod:
+      account: BCUXZJM-DV75402
+      database: prod_db
+      private_key_path: "{{ env_var('DBT_PRIVATE_KEY_PATH') }}"
+      role: ACCOUNTADMIN
+      schema: prod_schema
+      threads: 1
+      type: snowflake
+      user: adjomo
+      warehouse: compute_wh
+    ci:
+      account: BCUXZJM-DV75402
+      database: CI_db
+      private_key_path: "{{ env_var('DBT_PRIVATE_KEY_PATH') }}"
+      role: ACCOUNTADMIN
+      schema: CI_schema
+      threads: 1
+      type: snowflake
+      user: adjomo
+      warehouse: compute_wh
+  target: ci
