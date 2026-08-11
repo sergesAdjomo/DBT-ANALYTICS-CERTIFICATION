@@ -1,5 +1,5 @@
 -- On peut attribuer ici ou dans le fichier dbt_project.yml
-{{config(tags=['stablecoin'], grants = {'select' : ['TESTER']})}}
+{{config(tags=['stablecoin'])}}
 -- depends_on: {{ ref('stablecoins') }}
 select
 t.date,
@@ -20,3 +20,4 @@ t.date,
 t.token_address,
 s.type,
 s.symbol
+

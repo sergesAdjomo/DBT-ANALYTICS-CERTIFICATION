@@ -1,0 +1,11 @@
+groups:
+  - name: analytics_engineering
+    owner:
+      name: Engineering
+      email: engineering@soprasteria.com
+
+  - name: fraud_detection
+    owner:
+      name: Fraud Detection Team
+      email: fraud-detection@soprasteria.com
+

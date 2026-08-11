@@ -55,4 +55,7 @@ models:
         - report
       +schema: marts  
 
-  
+      analytics:
+        stablecoin_activity_per_day:
+          +grants:
+            select: []
