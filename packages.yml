@@ -16,4 +16,4 @@ packages:
   # The audit_helper package provides helper macros for auditing dbt models
   # Example: dbt audit_helper.compare_relations can help compare data between tables drop or add columns etc.
   - package: dbt-labs/audit_helper
-    version: 0.10.0 # Specific version number
+    version: 0.14.0 # Specific version number

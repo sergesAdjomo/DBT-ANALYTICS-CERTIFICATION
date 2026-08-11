@@ -12,3 +12,42 @@ models:
         data_tests:
           - not_null
           - unique
+
+  - name: stablecoin_activity_per_day
+    description: ""
+    latest_version: 2
+    versions:
+      - v: 1
+        defined_in: stablecoin_activity_per_day_v1
+        deprecation_date: 2026-10-20
+        config:
+          contract:
+            enforced: true
+        columns:
+          - name: date
+            data_type: date
+            description: ""
+          - name: token_address
+            data_type: varchar
+            description: ""
+          - name: type
+            data_type: varchar
+            description: ""
+          - name: symbol
+            data_type: varchar
+            description: ""
+          - name: total_usd_value
+            data_type: float
+            description: ""
+      - v: 2
+        defined_in: stablecoin_activity_per_day_v2
+        columns:
+          - name: date
+            data_type: date
+            description: ""
+          - name: type
+            data_type: varchar
+            description: ""
+          - name: total_usd_value
+            data_type: float
+            description: ""
