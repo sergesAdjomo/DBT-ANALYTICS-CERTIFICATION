@@ -13,6 +13,10 @@ jobs:
     env:
       DBT_PRIVATE_KEY: ${{ secrets.DBT_PRIVATE_KEY }}
       DBT_PRIVATE_KEY_PATH: /home/runner/.dbt/rsa_key.p8
+      DBT_SNOWFLAKE_IDENTIFIER: ${{ secrets.DBT_SNOWFLAKE_IDENTIFIER }}
+      DBT_SNOWFLAKE_ROLE: ${{ secrets.DBT_SNOWFLAKE_ROLE }}
+      DBT_SNOWFLAKE_USER: ${{ secrets.DBT_SNOWFLAKE_USER }}
+      DBT_SCHEMA: pr_${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout repo
@@ -31,7 +35,7 @@ jobs:
       - name: Set up dbt profile + private key
         run: |
           mkdir -p ~/.dbt
-          cp .github/profiles.yml ~/.dbt/profiles.yml
+          cp .dbt/profiles.yml ~/.dbt/profiles.yml
           echo "$DBT_PRIVATE_KEY" > ~/.dbt/rsa_key.p8
           chmod 600 ~/.dbt/rsa_key.p8
 
