@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir -p state
           git checkout main
-          git deps
+          dbt deps
           dbt parse --target prod
           cp target/manifest.json state/manifest.json
           git checkout -
