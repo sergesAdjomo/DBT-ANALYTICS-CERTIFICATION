@@ -19,7 +19,7 @@ SELECT
     date,
     transaction_category,
     count(*) as txt_count,
-    sum(value)/1e18 as sum_eth_value
+    sum(value)/1e18 as sum_value_ethereum
 
 FROM {{ ref('stg_transactions_enriched') }}
 {{ random_macro() }}
