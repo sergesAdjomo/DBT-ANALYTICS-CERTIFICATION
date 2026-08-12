@@ -63,7 +63,7 @@ jobs:
             --target ci \
             --state ./state \
             --defer \
-            --select "state:modified+, config.materialized:incremental, state:old"
+            --select "state:modified+,config.materialized:incremental,state:old"
 
     # ---- Then slim build the rest ----
       - name: Slim build (modified + downstream)
