@@ -25,6 +25,8 @@ transactions_enriched AS (
         t.receipt_contract_address,
         t.input,
         tt.token_transactions_count,
+        1 as new_field,
+        2 as another_new_field,
 
         case
                 when t.receipt_contract_address != '' then 'contract_creation'
