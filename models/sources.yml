@@ -2,10 +2,12 @@ version: 2
 
 sources:
   - name: eth
+    description: This is my eth source
     database: eth
     schema: eth_schema
     tables:
       - name: contracts
+        description: This is my contracts table
       - name: token_transfers
       - name: transactions 
         columns:

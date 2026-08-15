@@ -36,7 +36,7 @@ models:
 
 
   - name: stg_transactions
-    description: Staging model for transactions
+    description: "{{ doc('transactions') }}"
     columns:
       - name: hash
         description: >
