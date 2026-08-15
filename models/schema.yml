@@ -1,6 +1,40 @@
 version: 2
 
+unit_tests:
+  - name: test_is_valid_transaction_category
+    model: stg_transactions_enriched
+    overrides:
+      macros:
+        is_incremental: false
+    given:
+      - input: ref('stg_transactions')
+        rows:
+          - {receipt_contract_address: "0xabc", hash: "blah"}
+      - input: ref('stg_token_transfers')
+        rows:
+          - {transaction_hash: "blah"}
+    expect:
+      rows:
+        - {transaction_category: "contract_creation"}
+
 models:
+  - name: stg_token_transfers
+    description: test generiqque of relationship between token transfers and transactions
+    columns:
+      - name: transaction_hash
+        data_tests:
+          - relationships:
+              to: ref('stg_transactions')
+              field: hash
+  - name: stg_transactions_enriched
+    description: test generique
+    columns:
+      - name: value
+        data_tests:
+          - assert_value_amout_positive:
+              field: block_number
+
+
   - name: stg_transactions
     description: Staging model for transactions
     columns:
@@ -16,6 +50,25 @@ models:
   - name: stablecoin_activity_per_day
     description: ""
     latest_version: 2
+    columns:
+      - name: date
+        data_type: date
+        description: ""
+      - name: token_address
+        data_type: varchar
+        description: ""
+      - name: type
+        data_type: varchar
+        description: ""
+        data_tests:
+          - accepted_values:
+              values: ['Hybrid', 'Crypto-backed', 'Fiat-backed']
+      - name: symbol
+        data_type: varchar
+        description: ""
+      - name: total_usd_value
+        data_type: float
+        description: ""
     versions:
       - v: 1
         defined_in: stablecoin_activity_per_day_v1
@@ -23,31 +76,9 @@ models:
         config:
           contract:
             enforced: true
-        columns:
-          - name: date
-            data_type: date
-            description: ""
-          - name: token_address
-            data_type: varchar
-            description: ""
-          - name: type
-            data_type: varchar
-            description: ""
-          - name: symbol
-            data_type: varchar
-            description: ""
-          - name: total_usd_value
-            data_type: float
-            description: ""
+
       - v: 2
         defined_in: stablecoin_activity_per_day_v2
         columns:
-          - name: date
-            data_type: date
-            description: ""
-          - name: type
-            data_type: varchar
-            description: ""
-          - name: total_usd_value
-            data_type: float
-            description: ""
+          - include: all
+            exclude: [token_address, symbol]
