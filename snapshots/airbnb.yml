@@ -1,0 +1,14 @@
+snapshots:
+  - name : airbnb_snap
+    relation: source('airbnb', 'apartment_listings')
+    config:
+      strategy: timestamp
+      unique_key: listing_id
+      updated_at: updated_at
+
+  - name: airbnb_snap_check
+    relation: source('airbnb', 'apartment_listings')
+    config:
+      strategy: check
+      unique_key: listing_id
+      check_cols: all

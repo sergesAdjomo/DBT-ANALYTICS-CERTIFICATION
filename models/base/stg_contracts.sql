@@ -3,7 +3,7 @@
 -- Elle est mise à jour à chaque exécution du pipeline dbt
 -- Elle est utile pour les analyses rapides et les rapports
 
-{{ config(materialized='view') }}
+{{ config(materialized='incremental', incremental_strategy='microbatch', begin='2026-08-15', event_time='date', batch_size='day', concurrent_batches=false ) }}
 
 SELECT
     address,

@@ -2,9 +2,28 @@ version: 2
 
 sources:
   - name: eth
+    description: This is my eth source
     database: eth
     schema: eth_schema
     tables:
       - name: contracts
+        description: This is my contracts table
+        config:
+          event_time: date
       - name: token_transfers
+        config:
+          event_time: date
       - name: transactions 
+        config:
+          event_time: date
+        columns:
+          - name: hash
+            data_tests:
+              - not_null
+              - unique
+  - name: airbnb
+    description: This is my airbnb source
+    database: airbnb
+    schema: airbnb
+    tables:
+      - name: apartment_listings
