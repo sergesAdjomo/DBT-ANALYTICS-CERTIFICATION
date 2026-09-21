@@ -6,7 +6,7 @@ Synthèse de tous les concepts vus dans les 65 questions, organisée par thème.
 
 ## 1. Node Selection (le sujet le plus dense de l'examen)
 
-### Opérateurs graphe
+### Opérateurs graphe : 
 | Opérateur | Effet |
 |---|---|
 | `+model` | modèle + **tous** ses ancêtres (upstream illimité) |
