@@ -30,17 +30,25 @@ L'historique des scores et la session en cours sont conservés dans le navigateu
 
 Les questions vivent dans `quiz/questions/`, un fichier par module. Chaque fichier appelle `QuizBank.add([...])`.
 
+L'**anglais est la langue principale** (c'est celle de l'examen) ; la traduction française est optionnelle, question par question, dans le bloc `fr`. Le bouton FR/EN de l'interface bascule l'affichage ; une question sans bloc `fr` reste en anglais.
+
 ```js
 QuizBank.add([
   {
     id: "tests-012",                 // unique dans toute la banque
     module: "tests",                 // id d'un module (voir bank.js)
-    topic: "Tests génériques",       // sujet libre, sert au regroupement « par sujet »
-    question: "Énoncé ? (`code` et **gras** autorisés, ```blocs``` aussi)",
-    choices: ["Réponse A", "Réponse B", "Réponse C", "Réponse D"],
+    topic: "Generic tests",          // sujet (en anglais), sert au regroupement « par sujet »
+    topic_fr: "Tests génériques",    // optionnel : libellé français du sujet
+    question: "Prompt? (`code`, **bold** and ```blocks``` allowed)",
+    choices: ["Answer A", "Answer B", "Answer C", "Answer D"],
     answer: [1],                     // index(es) base 0 ; plusieurs = question à choix multiples
-    explanation: "Pourquoi B est correcte et pas les autres.",
+    explanation: "Why B is correct and the others are not.",
     source: "https://docs.getdbt.com/…",   // optionnel
+    fr: {                            // optionnel : traduction française
+      question: "Énoncé ?",
+      choices: ["Réponse A", "Réponse B", "Réponse C", "Réponse D"],  // même ordre que choices
+      explanation: "Pourquoi B est correcte et pas les autres.",
+    },
   },
 ]);
 ```
@@ -49,7 +57,7 @@ QuizBank.add([
 - Pour un nouveau fichier : le créer dans `questions/` et ajouter sa balise `<script>` dans `index.html` (après `bank.js`).
 - Pour un nouveau module : l'ajouter dans `MODULES` de `questions/bank.js`.
 
-Les questions mal formées (id en double, index de réponse hors bornes, champ manquant) sont ignorées et listées dans la console du navigateur ; un bandeau l'indique sur l'écran d'accueil.
+Les questions mal formées (id en double, index de réponse hors bornes, champ manquant, `fr.choices` de longueur différente) sont ignorées et listées dans la console du navigateur ; un bandeau l'indique sur l'écran d'accueil.
 
 ### Depuis l'interface (perso, dans le navigateur seulement)
 

@@ -1,16 +1,16 @@
-/* dbt Quiz — logique de l'application (vanilla JS, aucun build). */
+/* dbt Quiz — application logic (vanilla JS, no build). */
 (() => {
   "use strict";
 
-  const PASS_MARK = 65;               // seuil de réussite de l'examen dbt (%)
-  const EXAM_QUESTIONS = 65;          // format réel
-  const EXAM_MINUTES = 120;           // format réel
-  const LS = { session: "dbtquiz.session", history: "dbtquiz.history", imported: "dbtquiz.imported", setup: "dbtquiz.setup" };
+  const PASS_MARK = 65;               // dbt exam passing score (%)
+  const EXAM_QUESTIONS = 65;          // real exam format
+  const EXAM_MINUTES = 120;           // real exam format
+  const LS = { session: "dbtquiz.session", history: "dbtquiz.history", imported: "dbtquiz.imported", setup: "dbtquiz.setup", lang: "dbtquiz.lang" };
 
   const app = document.getElementById("app");
   const topbarRight = document.getElementById("topbar-right");
 
-  // ---------- Stockage (tolérant : navigation privée, blocage, etc.) ----------
+  // ---------- Storage (tolerant: private mode, blocked storage, …) ----------
   const store = {
     get(key, fallback) {
       try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
@@ -21,14 +21,124 @@
     del(key) { try { localStorage.removeItem(key); } catch { /* ignore */ } },
   };
 
-  // Questions importées depuis l'interface (JSON), rechargées au démarrage.
+  // Questions imported from the UI (JSON), reloaded at startup.
   const imported = store.get(LS.imported, []);
   if (imported.length) QuizBank.add(imported, "import");
 
-  // ---------- Utilitaires ----------
+  // ---------- i18n ----------
+  const STRINGS = {
+    en: {
+      title: "dbt Analytics Engineering exam prep",
+      lead: "Pick the questions, then the mode, then start.",
+      malformed: (n) => `${n} malformed question(s) ignored — see the browser console.`,
+      step1: "1. Which questions?",
+      available: (n) => `${n} questions available in the bank.`,
+      random: "Random", randomHint: "A draw over the whole bank, like the real exam.",
+      byModule: "By module", byModuleHint: "The 8 official exam domains.",
+      byTopic: "By topic", byTopicHint: "Questions grouped by specific theme.",
+      pickOne: (kind) => `Select one or more ${kind}.`, modules: "modules", topics: "topics",
+      all: "All", none: "None",
+      count: (max) => `Number of questions (max ${max})`,
+      shuffleOrder: "Shuffle question order", shuffleChoices: "Shuffle answers",
+      step2: "2. Which mode?",
+      train: "Practice", trainHint: "Immediate correction and explanation after each question.",
+      exam: "Exam", examHint: "Timed, free navigation, correction at the end. 65 questions / 120 min in real conditions.",
+      duration: "Duration (minutes)", proportional: "Proportional to the real format",
+      start: "3. Start",
+      summary: (n, mode, min) => `${n} question(s) · ${mode === "exam" ? `exam ${min} min` : "practice"}`,
+      needSelection: "Select at least one module / topic.",
+      history: "History", date: "Date", mode: "Mode", selection: "Selection", score: "Score",
+      clearHistory: "Clear history",
+      addQuestions: "Add questions",
+      addHint: "Import a JSON file (array of questions in the <code>questions/bank.js</code> format). They are kept in this browser only. To share them, add them to <code>quiz/questions/</code> in the repo instead.",
+      importBtn: "Import JSON", importedCount: (n) => `${n} imported question(s)`, clearImport: "Remove imported questions", template: "Download a JSON template",
+      importResult: (a, r) => `${a} question(s) added${r ? `, ${r} rejected (see console)` : ""}.`, invalidJson: (m) => `Invalid JSON: ${m}`,
+      sessionInProgress: "Session in progress",
+      answeredOf: (a, n) => `${a}/${n} answered`, remaining: (t) => `${t} remaining`, timeUp: "time is up",
+      resume: "Resume", abandon: "Abandon and start over",
+      finish: "Finish", quit: "Quit", practiceProgress: (a, n) => `Practice · ${a}/${n}`,
+      flagged: "Flagged", flag: "Flag for review", unflag: "Unflag",
+      selectN: (n) => `Select ${n} answers.`, selectOne: "Select one answer.",
+      shortcuts: (last) => `Shortcuts: keys A–${last}, Enter.`,
+      prev: "← Previous", next: "Next →", skip: "Skip", validate: "Check",
+      correct: "Correct", wrong: "Wrong", skipped: "Skipped", answerIs: (multi) => `answer${multi ? "s" : ""}`,
+      docLink: "dbt documentation ↗",
+      legendAnswered: "Answered", legendFlagged: "Flagged", legendCurrent: "Current",
+      pass: "Passed", fail: "Not passed", scoreLine: (g, t) => `${g}/${t} correct answers (pass mark ${PASS_MARK} %)`,
+      resultMeta: (mode, sel, dur, per, target) => `${mode} · ${sel} · duration ${dur} · ${per} s/question${target ? ` (target ≈ ${target} s)` : ""}`,
+      retryWrong: (n) => `Redo my ${n} mistake(s)`, newSession: "New session", home: "Home",
+      byModuleTitle: "By module", review: "Question review", errors: (n) => `Mistakes (${n})`, allQ: (n) => `All (${n})`, noErrors: "No mistakes, well done.",
+      confirmHome: "Leave the current session? It will be kept for later.", confirmAbandon: "Abandon the current session?",
+      confirmFinish: (n) => `${n} unanswered question(s). Finish anyway?`, confirmQuit: "End practice and see the results?",
+      confirmClearHistory: "Clear the score history?", confirmClearImport: "Remove all imported questions?",
+      footer: (n) => `Question bank: ${n} questions · Exam pass mark: 65 %`,
+      modeLabel: (m) => (m === "exam" ? "Exam" : "Practice"), randomSel: "Random", modulesSel: "Modules: ", topicsSel: "Topics: ",
+      langBtn: "FR", langTitle: "Passer en français",
+      locale: "en-GB",
+    },
+    fr: {
+      title: "Préparation dbt Analytics Engineering",
+      lead: "Choisissez les questions, puis le mode, puis lancez.",
+      malformed: (n) => `${n} question(s) ignorée(s) car mal formée(s) — voir la console du navigateur.`,
+      step1: "1. Quelles questions ?",
+      available: (n) => `${n} questions disponibles dans la banque.`,
+      random: "Aléatoire", randomHint: "Un tirage sur toute la banque, comme le vrai examen.",
+      byModule: "Par module", byModuleHint: "Les 8 domaines officiels de l'examen.",
+      byTopic: "Par sujet", byTopicHint: "Questions regroupées par thème précis.",
+      pickOne: (kind) => `Sélectionnez un ou plusieurs ${kind}.`, modules: "modules", topics: "sujets",
+      all: "Tout", none: "Aucun",
+      count: (max) => `Nombre de questions (max ${max})`,
+      shuffleOrder: "Mélanger l'ordre des questions", shuffleChoices: "Mélanger les réponses",
+      step2: "2. Quel mode ?",
+      train: "Entraînement", trainHint: "Correction et explication immédiates après chaque question.",
+      exam: "Examen", examHint: "Chronométré, navigation libre, correction à la fin. 65 questions / 120 min en conditions réelles.",
+      duration: "Durée (minutes)", proportional: "Proportionnel au format réel",
+      start: "3. Lancer",
+      summary: (n, mode, min) => `${n} question(s) · ${mode === "exam" ? `examen ${min} min` : "entraînement"}`,
+      needSelection: "Sélectionnez au moins un module / sujet.",
+      history: "Historique", date: "Date", mode: "Mode", selection: "Sélection", score: "Score",
+      clearHistory: "Effacer l'historique",
+      addQuestions: "Ajouter des questions",
+      addHint: "Importez un fichier JSON (tableau de questions au format de <code>questions/bank.js</code>). Elles sont conservées dans ce navigateur. Pour les partager, ajoutez-les plutôt dans <code>quiz/questions/</code> du dépôt.",
+      importBtn: "Importer un JSON", importedCount: (n) => `${n} question(s) importée(s)`, clearImport: "Retirer les questions importées", template: "Télécharger un modèle JSON",
+      importResult: (a, r) => `${a} question(s) ajoutée(s)${r ? `, ${r} rejetée(s) (voir console)` : ""}.`, invalidJson: (m) => `JSON invalide : ${m}`,
+      sessionInProgress: "Session en cours",
+      answeredOf: (a, n) => `${a}/${n} répondues`, remaining: (t) => `${t} restantes`, timeUp: "temps écoulé",
+      resume: "Reprendre", abandon: "Abandonner et recommencer",
+      finish: "Terminer", quit: "Quitter", practiceProgress: (a, n) => `Entraînement · ${a}/${n}`,
+      flagged: "Marquée", flag: "Marquer pour revue", unflag: "Démarquer",
+      selectN: (n) => `Sélectionnez ${n} réponses.`, selectOne: "Sélectionnez une réponse.",
+      shortcuts: (last) => `Raccourcis : touches A–${last}, Entrée.`,
+      prev: "← Précédent", next: "Suivant →", skip: "Passer", validate: "Valider",
+      correct: "Bonne réponse", wrong: "Mauvaise réponse", skipped: "Question passée", answerIs: (multi) => `réponse${multi ? "s" : ""}`,
+      docLink: "Documentation dbt ↗",
+      legendAnswered: "Répondue", legendFlagged: "Marquée", legendCurrent: "Actuelle",
+      pass: "Réussi", fail: "Insuffisant", scoreLine: (g, t) => `${g}/${t} bonnes réponses (seuil ${PASS_MARK} %)`,
+      resultMeta: (mode, sel, dur, per, target) => `${mode} · ${sel} · durée ${dur} · ${per} s/question${target ? ` (objectif ≈ ${target} s)` : ""}`,
+      retryWrong: (n) => `Refaire mes ${n} erreur(s)`, newSession: "Nouvelle session", home: "Accueil",
+      byModuleTitle: "Par module", review: "Revue des questions", errors: (n) => `Erreurs (${n})`, allQ: (n) => `Toutes (${n})`, noErrors: "Aucune erreur, bravo.",
+      confirmHome: "Quitter la session en cours ? Elle sera conservée pour reprise.", confirmAbandon: "Abandonner la session en cours ?",
+      confirmFinish: (n) => `${n} question(s) sans réponse. Terminer quand même ?`, confirmQuit: "Terminer l'entraînement et voir le bilan ?",
+      confirmClearHistory: "Effacer l'historique des scores ?", confirmClearImport: "Retirer toutes les questions importées ?",
+      footer: (n) => `Banque de questions : ${n} questions · Seuil de réussite de l'examen : 65 %`,
+      modeLabel: (m) => (m === "exam" ? "Examen" : "Entraînement"), randomSel: "Aléatoire", modulesSel: "Modules : ", topicsSel: "Sujets : ",
+      langBtn: "EN", langTitle: "Switch to English",
+      locale: "fr-FR",
+    },
+  };
+  let lang = store.get(LS.lang, "en");
+  if (!STRINGS[lang]) lang = "en";
+  const t = (key, ...args) => { const v = STRINGS[lang][key]; return typeof v === "function" ? v(...args) : v; };
+
+  // Question text in the current language (falls back to English).
+  const qt = (q, field) => (lang === "fr" && q.fr && q.fr[field] != null ? q.fr[field] : q[field]);
+  const topicLabel = (q) => (lang === "fr" && q.topic_fr ? q.topic_fr : q.topic);
+  const moduleLabel = (id) => QuizBank.moduleLabel(id, lang);
+
+  // ---------- Utilities ----------
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  // Mini-formatage : ```bloc```, `code`, **gras**, retours à la ligne.
+  // Mini formatter: ```block```, `code`, **bold**, line breaks.
   function fmt(text) {
     const blocks = [];
     let s = String(text ?? "").replace(/```(?:\w+)?\n?([\s\S]*?)```/g, (_, code) => {
@@ -53,13 +163,18 @@
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
   const LETTERS = "ABCDEFGHIJ";
 
-  // ---------- État ----------
+  // ---------- State ----------
   const bank = () => QuizBank.all();
   const byId = (id) => bank().find((q) => q.id === id);
-  const topicsOf = (qs) => [...new Set(qs.map((q) => q.topic))].sort((a, b) => a.localeCompare(b, "fr"));
+  // Topics are keyed by their English label; the display label follows the current language.
+  const topicsOf = (qs) => {
+    const map = new Map();
+    qs.forEach((q) => { if (!map.has(q.topic)) map.set(q.topic, topicLabel(q)); });
+    return [...map.entries()].map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label, STRINGS[lang].locale));
+  };
   const modulesOf = (qs) => {
     const present = new Set(qs.map((q) => q.module));
-    const known = QuizBank.MODULES.filter((m) => present.has(m.id));
+    const known = QuizBank.MODULES.filter((m) => present.has(m.id)).map((m) => ({ id: m.id, label: moduleLabel(m.id) }));
     const unknown = [...present].filter((id) => !QuizBank.MODULES.some((m) => m.id === id)).map((id) => ({ id, label: id }));
     return [...known, ...unknown];
   };
@@ -76,7 +191,7 @@
   const saveSetup = () => store.set(LS.setup, setup);
   const saveSession = () => (session ? store.set(LS.session, session) : store.del(LS.session));
 
-  // ---------- Sélection des questions ----------
+  // ---------- Question selection ----------
   function pool() {
     const all = bank();
     if (setup.selType === "module") return all.filter((q) => setup.modules.includes(q.module));
@@ -84,7 +199,16 @@
     return all;
   }
 
-  function buildSession(questions, mode, minutes) {
+  // Selection is stored structurally so it can be displayed in either language.
+  function describeSelection(sel) {
+    sel = sel || session.selection;
+    if (typeof sel === "string") return sel; // legacy sessions/history
+    if (sel.type === "module") return t("modulesSel") + sel.ids.map(moduleLabel).join(", ");
+    if (sel.type === "topic") return t("topicsSel") + sel.ids.map((id) => { const q = bank().find((q) => q.topic === id); return q ? topicLabel(q) : id; }).join(", ");
+    return t("randomSel");
+  }
+
+  function buildSession(questions, mode, minutes, selection) {
     const items = questions.map((q) => ({
       id: q.id,
       order: setup.shuffleChoices ? shuffle(q.choices.map((_, i) => i)) : q.choices.map((_, i) => i),
@@ -93,32 +217,19 @@
       flagged: false,
     }));
     const now = Date.now();
-    session = {
-      mode,
-      selection: describeSelection(),
-      items,
-      idx: 0,
-      startedAt: now,
-      endAt: mode === "exam" ? now + minutes * 60 * 1000 : null,
-      finished: false,
-    };
+    session = { mode, selection, items, idx: 0, startedAt: now, endAt: mode === "exam" ? now + minutes * 60 * 1000 : null, finished: false };
     saveSession();
-  }
-
-  function describeSelection() {
-    if (setup.selType === "module") return "Modules : " + setup.modules.map((m) => QuizBank.moduleLabel(m)).join(", ");
-    if (setup.selType === "topic") return "Sujets : " + setup.topics.join(", ");
-    return "Aléatoire";
   }
 
   function start() {
     let qs = pool();
     if (!qs.length) return;
     if (setup.selType === "random" || setup.shuffleOrder) qs = shuffle(qs);
-    else qs = qs.slice().sort((a, b) => a.module.localeCompare(b.module) || a.topic.localeCompare(b.topic, "fr"));
+    else qs = qs.slice().sort((a, b) => a.module.localeCompare(b.module) || a.topic.localeCompare(b.topic));
     const n = Math.max(1, Math.min(setup.count || qs.length, qs.length));
     qs = qs.slice(0, n);
-    buildSession(qs, setup.mode, setup.minutes);
+    const selection = setup.selType === "module" ? { type: "module", ids: setup.modules.slice() } : setup.selType === "topic" ? { type: "topic", ids: setup.topics.slice() } : { type: "random" };
+    buildSession(qs, setup.mode, setup.minutes, selection);
     saveSetup();
     view = "quiz";
     render();
@@ -128,7 +239,7 @@
     const qs = shuffle(ids.map(byId).filter(Boolean));
     if (!qs.length) return;
     const minutes = Math.max(5, Math.round((qs.length * EXAM_MINUTES) / EXAM_QUESTIONS));
-    buildSession(qs, mode, minutes);
+    buildSession(qs, mode, minutes, session.selection);
     view = "quiz";
     render();
   }
@@ -146,13 +257,6 @@
     session.items.forEach((it) => (it.validated = true));
     const total = session.items.length;
     const good = session.items.filter(isCorrect).length;
-    const byModule = {};
-    session.items.forEach((it) => {
-      const q = byId(it.id); if (!q) return;
-      byModule[q.module] = byModule[q.module] || { good: 0, total: 0 };
-      byModule[q.module].total++;
-      if (isCorrect(it)) byModule[q.module].good++;
-    });
     const history = store.get(LS.history, []);
     history.unshift({ date: session.finishedAt, mode: session.mode, selection: session.selection, good, total, pct: pct(good, total), duration: session.finishedAt - session.startedAt });
     store.set(LS.history, history.slice(0, 30));
@@ -178,15 +282,19 @@
   }
   function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; }
 
-  // ---------- Rendu ----------
+  // ---------- Rendering ----------
+  const langButton = () => `<button class="btn ghost small lang" data-action="lang" title="${esc(t("langTitle"))}">${t("langBtn")}</button>`;
+
   function render() {
     stopTimer();
+    document.documentElement.lang = lang;
     topbarRight.innerHTML = "";
-    document.getElementById("bank-count").textContent = `${bank().length} questions`;
+    document.getElementById("bank-footer").textContent = t("footer", bank().length);
     if (view === "setup") renderSetup();
     else if (view === "resume") renderResume();
     else if (view === "quiz") renderQuiz();
     else if (view === "results") renderResults();
+    if (!topbarRight.querySelector(".lang")) topbarRight.insertAdjacentHTML("beforeend", langButton());
     window.scrollTo({ top: 0 });
   }
 
@@ -203,74 +311,74 @@
       setup.selType === "module"
         ? modules.map((m) => `<button class="chip ${setup.modules.includes(m.id) ? "active" : ""}" data-action="toggle-module" data-id="${esc(m.id)}">${esc(m.label)}<span class="count">${countBy("module", m.id)}</span></button>`).join("")
         : setup.selType === "topic"
-        ? topics.map((t) => `<button class="chip ${setup.topics.includes(t) ? "active" : ""}" data-action="toggle-topic" data-id="${esc(t)}">${esc(t)}<span class="count">${countBy("topic", t)}</span></button>`).join("")
+        ? topics.map((tp) => `<button class="chip ${setup.topics.includes(tp.id) ? "active" : ""}" data-action="toggle-topic" data-id="${esc(tp.id)}">${esc(tp.label)}<span class="count">${countBy("topic", tp.id)}</span></button>`).join("")
         : "";
 
     app.innerHTML = `
-      <h1>Préparation dbt Analytics Engineering</h1>
-      <p class="lead">Choisissez les questions, puis le mode, puis lancez.</p>
+      <h1>${t("title")}</h1>
+      <p class="lead">${t("lead")}</p>
 
-      ${errs.length ? `<div class="alert">${errs.length} question(s) ignorée(s) car mal formée(s) — voir la console du navigateur.</div>` : ""}
+      ${errs.length ? `<div class="alert">${t("malformed", errs.length)}</div>` : ""}
 
       <section class="card">
-        <h2>1. Quelles questions ?</h2>
-        <p class="hint">${all.length} questions disponibles dans la banque.</p>
+        <h2>${t("step1")}</h2>
+        <p class="hint">${t("available", all.length)}</p>
         <div class="tiles">
-          <button class="tile ${setup.selType === "random" ? "active" : ""}" data-action="seltype" data-id="random"><strong>Aléatoire</strong><span>Un tirage sur toute la banque, comme le vrai examen.</span></button>
-          <button class="tile ${setup.selType === "module" ? "active" : ""}" data-action="seltype" data-id="module"><strong>Par module</strong><span>Les 8 domaines officiels de l'examen.</span></button>
-          <button class="tile ${setup.selType === "topic" ? "active" : ""}" data-action="seltype" data-id="topic"><strong>Par sujet</strong><span>Questions regroupées par thème précis.</span></button>
+          <button class="tile ${setup.selType === "random" ? "active" : ""}" data-action="seltype" data-id="random"><strong>${t("random")}</strong><span>${t("randomHint")}</span></button>
+          <button class="tile ${setup.selType === "module" ? "active" : ""}" data-action="seltype" data-id="module"><strong>${t("byModule")}</strong><span>${t("byModuleHint")}</span></button>
+          <button class="tile ${setup.selType === "topic" ? "active" : ""}" data-action="seltype" data-id="topic"><strong>${t("byTopic")}</strong><span>${t("byTopicHint")}</span></button>
         </div>
         ${chipsHtml ? `
           <div class="row spread" style="margin-top:14px">
-            <span class="muted small">Sélectionnez un ou plusieurs ${setup.selType === "module" ? "modules" : "sujets"}.</span>
-            <span class="row"><button class="btn ghost small" data-action="select-all">Tout</button><button class="btn ghost small" data-action="select-none">Aucun</button></span>
+            <span class="muted small">${t("pickOne", setup.selType === "module" ? t("modules") : t("topics"))}</span>
+            <span class="row"><button class="btn ghost small" data-action="select-all">${t("all")}</button><button class="btn ghost small" data-action="select-none">${t("none")}</button></span>
           </div>
           <div class="chips">${chipsHtml}</div>` : ""}
         <div class="row" style="margin-top:16px; gap:20px">
-          <label class="field">Nombre de questions (max ${available})
+          <label class="field">${t("count", available)}
             <input type="number" id="count" min="1" max="${available || 1}" value="${Math.min(setup.count || available, available || 1)}" />
           </label>
-          <label class="checkbox"><input type="checkbox" id="shuffleOrder" ${setup.shuffleOrder ? "checked" : ""} /> Mélanger l'ordre des questions</label>
-          <label class="checkbox"><input type="checkbox" id="shuffleChoices" ${setup.shuffleChoices ? "checked" : ""} /> Mélanger les réponses</label>
+          <label class="checkbox"><input type="checkbox" id="shuffleOrder" ${setup.shuffleOrder ? "checked" : ""} /> ${t("shuffleOrder")}</label>
+          <label class="checkbox"><input type="checkbox" id="shuffleChoices" ${setup.shuffleChoices ? "checked" : ""} /> ${t("shuffleChoices")}</label>
         </div>
       </section>
 
       <section class="card">
-        <h2>2. Quel mode ?</h2>
+        <h2>${t("step2")}</h2>
         <div class="tiles">
-          <button class="tile ${setup.mode === "train" ? "active" : ""}" data-action="mode" data-id="train"><strong>Entraînement</strong><span>Correction et explication immédiates après chaque question.</span></button>
-          <button class="tile ${setup.mode === "exam" ? "active" : ""}" data-action="mode" data-id="exam"><strong>Examen</strong><span>Chronométré, navigation libre, correction à la fin. 65 questions / 120 min en conditions réelles.</span></button>
+          <button class="tile ${setup.mode === "train" ? "active" : ""}" data-action="mode" data-id="train"><strong>${t("train")}</strong><span>${t("trainHint")}</span></button>
+          <button class="tile ${setup.mode === "exam" ? "active" : ""}" data-action="mode" data-id="exam"><strong>${t("exam")}</strong><span>${t("examHint")}</span></button>
         </div>
         ${setup.mode === "exam" ? `
           <div class="row" style="margin-top:14px">
-            <label class="field">Durée (minutes)<input type="number" id="minutes" min="1" max="600" value="${setup.minutes}" /></label>
-            <button class="btn ghost small" data-action="minutes-auto">Proportionnel au format réel</button>
+            <label class="field">${t("duration")}<input type="number" id="minutes" min="1" max="600" value="${setup.minutes}" /></label>
+            <button class="btn ghost small" data-action="minutes-auto">${t("proportional")}</button>
           </div>` : ""}
       </section>
 
       <div class="row spread">
-        <button class="btn primary big" data-action="start" ${available ? "" : "disabled"}>3. Lancer</button>
-        <span class="muted small">${available ? `${Math.min(setup.count || available, available)} question(s) · ${setup.mode === "exam" ? `examen ${setup.minutes} min` : "entraînement"}` : "Sélectionnez au moins un module / sujet."}</span>
+        <button class="btn primary big" data-action="start" ${available ? "" : "disabled"}>${t("start")}</button>
+        <span class="muted small">${available ? t("summary", Math.min(setup.count || available, available), setup.mode, setup.minutes) : t("needSelection")}</span>
       </div>
 
       ${history.length ? `
       <section class="card history" style="margin-top:24px">
-        <h2>Historique</h2>
+        <h2>${t("history")}</h2>
         <table>
-          <thead><tr><th>Date</th><th>Mode</th><th>Sélection</th><th>Score</th></tr></thead>
-          <tbody>${history.slice(0, 10).map((h) => `<tr><td>${new Date(h.date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</td><td>${h.mode === "exam" ? "Examen" : "Entraînement"}</td><td class="muted">${esc(h.selection)}</td><td><strong style="color:${h.pct >= PASS_MARK ? "var(--ok)" : "var(--ko)"}">${h.pct} %</strong> <span class="muted">(${h.good}/${h.total})</span></td></tr>`).join("")}</tbody>
+          <thead><tr><th>${t("date")}</th><th>${t("mode")}</th><th>${t("selection")}</th><th>${t("score")}</th></tr></thead>
+          <tbody>${history.slice(0, 10).map((h) => `<tr><td>${new Date(h.date).toLocaleString(STRINGS[lang].locale, { dateStyle: "short", timeStyle: "short" })}</td><td>${t("modeLabel", h.mode)}</td><td class="muted">${esc(describeSelection(h.selection))}</td><td><strong style="color:${h.pct >= PASS_MARK ? "var(--ok)" : "var(--ko)"}">${h.pct} %</strong> <span class="muted">(${h.good}/${h.total})</span></td></tr>`).join("")}</tbody>
         </table>
-        <div style="margin-top:10px"><button class="btn ghost small danger" data-action="clear-history">Effacer l'historique</button></div>
+        <div style="margin-top:10px"><button class="btn ghost small danger" data-action="clear-history">${t("clearHistory")}</button></div>
       </section>` : ""}
 
       <section class="card" style="margin-top:24px">
-        <h2>Ajouter des questions</h2>
-        <p class="hint">Importez un fichier JSON (tableau de questions au format de <code>questions/bank.js</code>). Elles sont conservées dans ce navigateur. Pour les partager, ajoutez-les plutôt dans <code>quiz/questions/</code> du dépôt.</p>
+        <h2>${t("addQuestions")}</h2>
+        <p class="hint">${t("addHint")}</p>
         <div class="row">
-          <button class="btn" data-action="import">Importer un JSON</button>
+          <button class="btn" data-action="import">${t("importBtn")}</button>
           <input type="file" id="import-file" class="hidden-input" accept=".json,application/json" />
-          ${imported.length ? `<span class="small muted">${imported.length} question(s) importée(s)</span><button class="btn ghost small danger" data-action="clear-import">Retirer les questions importées</button>` : ""}
-          <button class="btn ghost small" data-action="export-template">Télécharger un modèle JSON</button>
+          ${imported.length ? `<span class="small muted">${t("importedCount", imported.length)}</span><button class="btn ghost small danger" data-action="clear-import">${t("clearImport")}</button>` : ""}
+          <button class="btn ghost small" data-action="export-template">${t("template")}</button>
         </div>
         <div id="import-msg"></div>
       </section>
@@ -279,13 +387,14 @@
 
   function renderResume() {
     const answered = session.items.filter((it) => it.validated || it.selected.length).length;
+    const left = session.mode === "exam" ? session.endAt - Date.now() : 0;
     app.innerHTML = `
       <section class="card">
-        <h2>Session en cours</h2>
-        <p class="hint">${session.mode === "exam" ? "Examen" : "Entraînement"} · ${esc(session.selection)} · ${answered}/${session.items.length} répondues${session.mode === "exam" ? ` · ${session.endAt - Date.now() > 0 ? fmtTime(session.endAt - Date.now()) + " restantes" : "temps écoulé"}` : ""}</p>
+        <h2>${t("sessionInProgress")}</h2>
+        <p class="hint">${t("modeLabel", session.mode)} · ${esc(describeSelection())} · ${t("answeredOf", answered, session.items.length)}${session.mode === "exam" ? ` · ${left > 0 ? t("remaining", fmtTime(left)) : t("timeUp")}` : ""}</p>
         <div class="row">
-          <button class="btn primary" data-action="resume">Reprendre</button>
-          <button class="btn" data-action="abandon">Abandonner et recommencer</button>
+          <button class="btn primary" data-action="resume">${t("resume")}</button>
+          <button class="btn" data-action="abandon">${t("abandon")}</button>
         </div>
       </section>`;
   }
@@ -298,10 +407,11 @@
     const exam = session.mode === "exam";
     const showFeedback = !exam && item.validated;
     const answeredCount = session.items.filter((it) => it.validated || it.selected.length).length;
+    const choices = qt(q, "choices");
 
     topbarRight.innerHTML = exam
-      ? `<span class="small">${answeredCount}/${n} répondues</span><span class="timer" id="timer">--:--</span><button class="btn small" data-action="finish-confirm">Terminer</button>`
-      : `<span class="small">Entraînement · ${session.items.filter((it) => it.validated).length}/${n}</span><button class="btn ghost small" data-action="quit-confirm">Quitter</button>`;
+      ? `<span class="small">${t("answeredOf", answeredCount, n)}</span><span class="timer" id="timer">--:--</span><button class="btn small" data-action="finish-confirm">${t("finish")}</button>`
+      : `<span class="small">${t("practiceProgress", session.items.filter((it) => it.validated).length, n)}</span><button class="btn ghost small" data-action="quit-confirm">${t("quit")}</button>`;
 
     const choicesHtml = item.order.map((ci, pos) => {
       const selected = item.selected.includes(ci);
@@ -312,7 +422,7 @@
         else if (selected && !correct) cls += " wrong";
         else if (!selected && correct) cls += " missed";
       } else if (selected) cls += " selected";
-      return `<li><button class="${cls}" data-action="choose" data-ci="${ci}" ${item.validated && !exam ? "disabled" : ""}><span class="key">${LETTERS[pos]}</span><span>${fmt(q.choices[ci])}</span></button></li>`;
+      return `<li><button class="${cls}" data-action="choose" data-ci="${ci}" ${item.validated && !exam ? "disabled" : ""}><span class="key">${LETTERS[pos]}</span><span>${fmt(choices[ci])}</span></button></li>`;
     }).join("");
 
     let feedbackHtml = "";
@@ -320,34 +430,34 @@
       const ok = isCorrect(item);
       feedbackHtml = `
         <div class="feedback ${ok ? "ok" : "ko"}">
-          <strong class="title">${ok ? "Bonne réponse" : item.selected.length ? "Mauvaise réponse" : "Question passée"} — réponse${multi ? "s" : ""} : ${q.answer.map((a) => LETTERS[item.order.indexOf(a)]).join(", ")}</strong>
-          <div>${fmt(q.explanation)}</div>
-          ${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">Documentation dbt ↗</a></div>` : ""}
+          <strong class="title">${ok ? t("correct") : item.selected.length ? t("wrong") : t("skipped")} — ${t("answerIs", multi)} : ${q.answer.map((a) => LETTERS[item.order.indexOf(a)]).join(", ")}</strong>
+          <div>${fmt(qt(q, "explanation"))}</div>
+          ${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}
         </div>`;
     }
 
     const gridHtml = exam ? `
       <section class="card">
         <div class="qgrid">${session.items.map((it, i) => `<button class="${i === session.idx ? "current" : ""} ${it.selected.length ? "answered" : ""} ${it.flagged ? "flagged" : ""}" data-action="goto" data-i="${i}">${i + 1}</button>`).join("")}</div>
-        <div class="legend"><span><i style="background:var(--surface-2)"></i>Répondue</span><span><i style="background:var(--warn-soft);border-color:var(--warn)"></i>Marquée</span><span><i style="outline:2px solid var(--accent)"></i>Actuelle</span></div>
+        <div class="legend"><span><i style="background:var(--surface-2)"></i>${t("legendAnswered")}</span><span><i style="background:var(--warn-soft);border-color:var(--warn)"></i>${t("legendFlagged")}</span><span><i style="outline:2px solid var(--accent)"></i>${t("legendCurrent")}</span></div>
       </section>` : "";
 
     app.innerHTML = `
       <div class="progress"><div style="width:${pct(session.idx + (item.validated ? 1 : 0), n)}%"></div></div>
       <section class="card">
-        <div class="badges"><span class="badge accent">${esc(QuizBank.moduleLabel(q.module))}</span><span class="badge">${esc(q.topic)}</span>${item.flagged ? `<span class="badge" style="background:var(--warn-soft);color:var(--warn)">Marquée</span>` : ""}</div>
-        <p class="qtext">${session.idx + 1}. ${fmt(q.question)}</p>
-        <p class="qmeta">${multi ? `Sélectionnez ${q.answer.length} réponses.` : "Sélectionnez une réponse."} <span class="muted">Raccourcis : touches A–${LETTERS[q.choices.length - 1]}, Entrée.</span></p>
+        <div class="badges"><span class="badge accent">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span>${item.flagged ? `<span class="badge" style="background:var(--warn-soft);color:var(--warn)">${t("flagged")}</span>` : ""}</div>
+        <p class="qtext">${session.idx + 1}. ${fmt(qt(q, "question"))}</p>
+        <p class="qmeta">${multi ? t("selectN", q.answer.length) : t("selectOne")} <span class="muted">${t("shortcuts", LETTERS[q.choices.length - 1])}</span></p>
         <ul class="choices">${choicesHtml}</ul>
         ${feedbackHtml}
         <div class="quiz-nav">
           <div class="left">
-            <button class="btn" data-action="prev" ${session.idx === 0 ? "disabled" : ""}>← Précédent</button>
-            ${exam ? `<button class="btn ${item.flagged ? "primary" : ""}" data-action="flag">${item.flagged ? "Démarquer" : "Marquer pour revue"}</button>` : ""}
+            <button class="btn" data-action="prev" ${session.idx === 0 ? "disabled" : ""}>${t("prev")}</button>
+            ${exam ? `<button class="btn ${item.flagged ? "primary" : ""}" data-action="flag">${item.flagged ? t("unflag") : t("flag")}</button>` : ""}
           </div>
           <div class="right">
-            ${!exam && !item.validated ? `<button class="btn ghost" data-action="skip">Passer</button><button class="btn primary" data-action="validate" ${item.selected.length ? "" : "disabled"}>Valider</button>` : ""}
-            ${(exam || item.validated) ? (session.idx < n - 1 ? `<button class="btn primary" data-action="next">Suivant →</button>` : `<button class="btn primary" data-action="finish-confirm">Terminer</button>`) : ""}
+            ${!exam && !item.validated ? `<button class="btn ghost" data-action="skip">${t("skip")}</button><button class="btn primary" data-action="validate" ${item.selected.length ? "" : "disabled"}>${t("validate")}</button>` : ""}
+            ${(exam || item.validated) ? (session.idx < n - 1 ? `<button class="btn primary" data-action="next">${t("next")}</button>` : `<button class="btn primary" data-action="finish-confirm">${t("finish")}</button>`) : ""}
           </div>
         </div>
       </section>
@@ -371,45 +481,46 @@
     const wrongIds = items.filter((it) => !isCorrect(it)).map((it) => it.id);
     const shown = items.map((it, i) => ({ it, i })).filter(({ it }) => reviewFilter === "all" || !isCorrect(it));
     const duration = (session.finishedAt || Date.now()) - session.startedAt;
+    const target = session.mode === "exam" ? Math.round((EXAM_MINUTES * 60) / EXAM_QUESTIONS) : 0;
 
-    topbarRight.innerHTML = `<button class="btn ghost small" data-action="home">Accueil</button>`;
+    topbarRight.innerHTML = `<button class="btn ghost small" data-action="home">${t("home")}</button>`;
 
     app.innerHTML = `
       <section class="card">
         <div class="score-hero">
           <div class="score-big ${pass ? "pass" : "fail"}">${score} %</div>
           <div>
-            <div class="verdict">${pass ? "Réussi" : "Insuffisant"} — ${good}/${total} bonnes réponses (seuil ${PASS_MARK} %)</div>
-            <div class="muted small">${session.mode === "exam" ? "Examen" : "Entraînement"} · ${esc(session.selection)} · durée ${fmtTime(duration)} · ${(duration / 1000 / total).toFixed(0)} s/question${session.mode === "exam" ? ` (objectif ≈ ${Math.round((EXAM_MINUTES * 60) / EXAM_QUESTIONS)} s)` : ""}</div>
+            <div class="verdict">${pass ? t("pass") : t("fail")} — ${t("scoreLine", good, total)}</div>
+            <div class="muted small">${t("resultMeta", t("modeLabel", session.mode), esc(describeSelection()), fmtTime(duration), (duration / 1000 / total).toFixed(0), target)}</div>
           </div>
         </div>
         <div class="row" style="margin-top:16px">
-          ${wrongIds.length ? `<button class="btn primary" data-action="retry-wrong">Refaire mes ${wrongIds.length} erreur(s)</button>` : ""}
-          <button class="btn" data-action="home">Nouvelle session</button>
+          ${wrongIds.length ? `<button class="btn primary" data-action="retry-wrong">${t("retryWrong", wrongIds.length)}</button>` : ""}
+          <button class="btn" data-action="home">${t("newSession")}</button>
         </div>
       </section>
 
       <section class="card">
-        <h2>Par module</h2>
+        <h2>${t("byModuleTitle")}</h2>
         <div class="bars">
-          ${Object.entries(byModule).map(([m, s]) => { const p = pct(s.good, s.total); return `<div class="bar"><span>${esc(QuizBank.moduleLabel(m))}</span><div class="track"><div class="${p < 50 ? "low" : p < PASS_MARK ? "mid" : ""}" style="width:${p}%"></div></div><span class="muted small">${s.good}/${s.total} · ${p} %</span></div>`; }).join("")}
+          ${Object.entries(byModule).map(([m, s]) => { const p = pct(s.good, s.total); return `<div class="bar"><span>${esc(moduleLabel(m))}</span><div class="track"><div class="${p < 50 ? "low" : p < PASS_MARK ? "mid" : ""}" style="width:${p}%"></div></div><span class="muted small">${s.good}/${s.total} · ${p} %</span></div>`; }).join("")}
         </div>
       </section>
 
       <section class="card">
         <div class="row spread">
-          <h2>Revue des questions</h2>
-          <span class="row"><button class="chip ${reviewFilter === "wrong" ? "active" : ""}" data-action="filter" data-id="wrong">Erreurs (${wrongIds.length})</button><button class="chip ${reviewFilter === "all" ? "active" : ""}" data-action="filter" data-id="all">Toutes (${total})</button></span>
+          <h2>${t("review")}</h2>
+          <span class="row"><button class="chip ${reviewFilter === "wrong" ? "active" : ""}" data-action="filter" data-id="wrong">${t("errors", wrongIds.length)}</button><button class="chip ${reviewFilter === "all" ? "active" : ""}" data-action="filter" data-id="all">${t("allQ", total)}</button></span>
         </div>
         ${shown.length ? shown.map(({ it, i }) => {
-          const q = byId(it.id); const ok = isCorrect(it);
+          const q = byId(it.id); const ok = isCorrect(it); const choices = qt(q, "choices");
           return `<div class="review-item">
-            <div class="badges"><span class="badge ${ok ? "" : "accent"}">${ok ? "✓ Correct" : "✗ Faux"}</span><span class="badge">${esc(QuizBank.moduleLabel(q.module))}</span><span class="badge">${esc(q.topic)}</span></div>
-            <p class="qtext">${i + 1}. ${fmt(q.question)}</p>
-            <ul class="choices">${it.order.map((ci, pos) => { const sel = it.selected.includes(ci), cor = q.answer.includes(ci); const cls = sel && cor ? "correct" : sel ? "wrong" : cor ? "missed" : ""; return `<li><button class="choice ${cls}" disabled><span class="key">${LETTERS[pos]}</span><span>${fmt(q.choices[ci])}</span></button></li>`; }).join("")}</ul>
-            <div class="feedback neutral"><div>${fmt(q.explanation)}</div>${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">Documentation dbt ↗</a></div>` : ""}</div>
+            <div class="badges"><span class="badge ${ok ? "" : "accent"}">${ok ? "✓ " + t("correct") : "✗ " + t("wrong")}</span><span class="badge">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span></div>
+            <p class="qtext">${i + 1}. ${fmt(qt(q, "question"))}</p>
+            <ul class="choices">${it.order.map((ci, pos) => { const sel = it.selected.includes(ci), cor = q.answer.includes(ci); const cls = sel && cor ? "correct" : sel ? "wrong" : cor ? "missed" : ""; return `<li><button class="choice ${cls}" disabled><span class="key">${LETTERS[pos]}</span><span>${fmt(choices[ci])}</span></button></li>`; }).join("")}</ul>
+            <div class="feedback neutral"><div>${fmt(qt(q, "explanation"))}</div>${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}</div>
           </div>`;
-        }).join("") : `<p class="muted">Aucune erreur, bravo.</p>`}
+        }).join("") : `<p class="muted">${t("noErrors")}</p>`}
       </section>
     `;
   }
@@ -429,12 +540,13 @@
           const addedIds = new Set(QuizBank.all().filter((q) => q.origin === "import").map((q) => q.id));
           const merged = [...kept, ...(Array.isArray(data) ? data.filter((q) => q && addedIds.has(q.id) && !kept.some((k) => k.id === q.id)) : [])];
           store.set(LS.imported, merged);
+          imported.length = 0; imported.push(...merged);
         }
-        if (msg) msg.innerHTML = `<div class="alert ${added ? "ok" : ""}" style="margin-top:10px">${added} question(s) ajoutée(s)${rejected ? `, ${rejected} rejetée(s) (voir console)` : ""}.</div>`;
-        if (rejected) console.warn("Questions rejetées :", QuizBank.errors.slice(before));
+        if (msg) msg.innerHTML = `<div class="alert ${added ? "ok" : ""}" style="margin-top:10px">${t("importResult", added, rejected)}</div>`;
+        if (rejected) console.warn("Rejected questions:", QuizBank.errors.slice(before));
         setTimeout(render, 900);
       } catch (e) {
-        if (msg) msg.innerHTML = `<div class="alert" style="margin-top:10px">JSON invalide : ${esc(e.message)}</div>`;
+        if (msg) msg.innerHTML = `<div class="alert" style="margin-top:10px">${t("invalidJson", esc(e.message))}</div>`;
       }
     };
     reader.readAsText(file);
@@ -442,30 +554,32 @@
 
   function exportTemplate() {
     const template = [{
-      id: "custom-001", module: "tests", topic: "Tests génériques",
-      question: "Énoncé de la question ? (`code` et **gras** autorisés)",
-      choices: ["Réponse A", "Réponse B", "Réponse C", "Réponse D"],
-      answer: [1], explanation: "Pourquoi B est la bonne réponse.", source: "https://docs.getdbt.com/",
+      id: "custom-001", module: "tests", topic: "Generic tests", topic_fr: "Tests génériques",
+      question: "Question prompt? (`code` and **bold** allowed)",
+      choices: ["Answer A", "Answer B", "Answer C", "Answer D"],
+      answer: [1], explanation: "Why B is the right answer.", source: "https://docs.getdbt.com/",
+      fr: { question: "Énoncé de la question ?", choices: ["Réponse A", "Réponse B", "Réponse C", "Réponse D"], explanation: "Pourquoi B est la bonne réponse." },
     }];
     const blob = new Blob([JSON.stringify(template, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "questions-modele.json"; a.click();
+    a.href = URL.createObjectURL(blob); a.download = "questions-template.json"; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
   // ---------- Actions ----------
   const actions = {
-    home() { if (session && !session.finished && view === "quiz" && !confirm("Quitter la session en cours ? Elle sera conservée pour reprise.")) return; view = session && !session.finished ? "resume" : "setup"; render(); },
+    lang() { lang = lang === "en" ? "fr" : "en"; store.set(LS.lang, lang); render(); },
+    home() { if (session && !session.finished && view === "quiz" && !confirm(t("confirmHome"))) return; view = session && !session.finished ? "resume" : "setup"; render(); },
     seltype(el) { setup.selType = el.dataset.id; if (setup.selType === "random") setup.count = Math.min(EXAM_QUESTIONS, bank().length); else setup.count = pool().length; saveSetup(); render(); },
     "toggle-module"(el) { const id = el.dataset.id; setup.modules = setup.modules.includes(id) ? setup.modules.filter((m) => m !== id) : [...setup.modules, id]; setup.count = pool().length; saveSetup(); render(); },
-    "toggle-topic"(el) { const id = el.dataset.id; setup.topics = setup.topics.includes(id) ? setup.topics.filter((t) => t !== id) : [...setup.topics, id]; setup.count = pool().length; saveSetup(); render(); },
-    "select-all"() { if (setup.selType === "module") setup.modules = modulesOf(bank()).map((m) => m.id); else setup.topics = topicsOf(bank()); setup.count = pool().length; saveSetup(); render(); },
+    "toggle-topic"(el) { const id = el.dataset.id; setup.topics = setup.topics.includes(id) ? setup.topics.filter((x) => x !== id) : [...setup.topics, id]; setup.count = pool().length; saveSetup(); render(); },
+    "select-all"() { if (setup.selType === "module") setup.modules = modulesOf(bank()).map((m) => m.id); else setup.topics = topicsOf(bank()).map((x) => x.id); setup.count = pool().length; saveSetup(); render(); },
     "select-none"() { if (setup.selType === "module") setup.modules = []; else setup.topics = []; setup.count = 0; saveSetup(); render(); },
     mode(el) { setup.mode = el.dataset.id; if (setup.mode === "exam") actions["minutes-auto"](null, true); saveSetup(); render(); },
     "minutes-auto"(_, silent) { const n = Math.min(setup.count || pool().length, pool().length); setup.minutes = Math.max(5, Math.round((n * EXAM_MINUTES) / EXAM_QUESTIONS)); saveSetup(); if (!silent) render(); },
     start() { readSetupInputs(); start(); },
     resume() { view = "quiz"; render(); },
-    abandon() { if (!confirm("Abandonner la session en cours ?")) return; session = null; saveSession(); view = "setup"; render(); },
+    abandon() { if (!confirm(t("confirmAbandon"))) return; session = null; saveSession(); view = "setup"; render(); },
     choose(el) {
       const item = session.items[session.idx]; const q = byId(item.id); const ci = +el.dataset.ci;
       if (item.validated && session.mode !== "exam") return;
@@ -481,17 +595,23 @@
     flag() { const item = session.items[session.idx]; item.flagged = !item.flagged; saveSession(); renderQuiz(); },
     "finish-confirm"() {
       const left = session.items.filter((it) => !it.selected.length && !it.validated).length;
-      if (left && !confirm(`${left} question(s) sans réponse. Terminer quand même ?`)) return;
+      if (left && !confirm(t("confirmFinish", left))) return;
       finish();
     },
-    "quit-confirm"() { if (!confirm("Terminer l'entraînement et voir le bilan ?")) return; finish(); },
+    "quit-confirm"() { if (!confirm(t("confirmQuit"))) return; finish(); },
     "retry-wrong"() { const ids = session.items.filter((it) => !isCorrect(it)).map((it) => it.id); startFrom(ids, "train"); },
     filter(el) { reviewFilter = el.dataset.id; renderResults(); },
-    "clear-history"() { if (confirm("Effacer l'historique des scores ?")) { store.del(LS.history); render(); } },
+    "clear-history"() { if (confirm(t("confirmClearHistory"))) { store.del(LS.history); render(); } },
     import() { document.getElementById("import-file").click(); },
-    "clear-import"() { if (!confirm("Retirer toutes les questions importées ?")) return; QuizBank.remove("import"); store.del(LS.imported); imported.length = 0; render(); },
+    "clear-import"() { if (!confirm(t("confirmClearImport"))) return; QuizBank.remove("import"); store.del(LS.imported); imported.length = 0; render(); },
     "export-template"() { exportTemplate(); },
   };
+
+  // The quiz screen re-renders only its own area; the language button lives in the top bar.
+  const origRenderQuiz = renderQuiz;
+  renderQuiz = function () { origRenderQuiz(); if (!topbarRight.querySelector(".lang")) topbarRight.insertAdjacentHTML("beforeend", langButton()); };
+  const origRenderResults = renderResults;
+  renderResults = function () { origRenderResults(); if (!topbarRight.querySelector(".lang")) topbarRight.insertAdjacentHTML("beforeend", langButton()); };
 
   function readSetupInputs() {
     const c = document.getElementById("count"); if (c) setup.count = parseInt(c.value, 10) || 1;
@@ -526,6 +646,6 @@
     else if (e.key === "ArrowRight" && (session.mode === "exam" || item.validated)) actions.next();
   });
 
-  if (QuizBank.errors.length) console.warn("Questions mal formées ignorées :", QuizBank.errors);
+  if (QuizBank.errors.length) console.warn("Malformed questions ignored:", QuizBank.errors);
   render();
 })();
