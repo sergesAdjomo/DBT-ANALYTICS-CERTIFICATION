@@ -13,7 +13,7 @@
  *   question: "Prompt…",          // `inline code`, ```blocks``` and **bold** supported
  *   choices: ["A", "B", "C", "D"],
  *   answer: [1],                  // 0-based index(es) of the correct choice(s)
- *   explanation: "Why…",
+ *   explanation: "Why…",          // optional but strongly recommended
  *   source: "https://docs.getdbt.com/…",   // optional
  *   fr: {                         // optional French translation
  *     question: "Énoncé…",
@@ -37,11 +37,31 @@ window.QuizBank = (() => {
     { id: "docs",         label: { en: "Creating and maintaining documentation", fr: "Créer et maintenir la documentation" } },
     { id: "dependencies", label: { en: "External dependencies",              fr: "Dépendances externes" } },
     { id: "state",        label: { en: "Leveraging dbt state",               fr: "Exploiter le state dbt" } },
+    { id: "other",        label: { en: "Uncategorized",                      fr: "Non classé" } },
   ];
 
   const questions = [];
   const ids = new Set();
   const errors = [];
+
+  // Accepts the alternate "question bank" shape too:
+  //   { question_number: 1, question: "…", options: {A: "…", B: "…"}, correct_answer: "B" | ["B","C"] }
+  // and turns it into the native format. Missing module/topic get a fallback.
+  function normalize(raw, source) {
+    if (!raw || typeof raw !== "object") return raw;
+    const q = { ...raw };
+    if (!Array.isArray(q.choices) && q.options && typeof q.options === "object") {
+      const keys = Object.keys(q.options);
+      q.choices = keys.map((k) => q.options[k]);
+      const letters = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer];
+      q.answer = letters.map((l) => keys.indexOf(String(l).trim().toUpperCase())).filter((i) => i >= 0);
+      delete q.options; delete q.correct_answer;
+    }
+    if (!q.id && q.question_number != null) q.id = `${source}-${String(q.question_number).padStart(3, "0")}`;
+    if (!q.module) q.module = "other";
+    if (!q.topic) q.topic = "Uncategorized";
+    return q;
+  }
 
   function validate(q) {
     const problems = [];
@@ -56,7 +76,6 @@ window.QuizBank = (() => {
     if (!ans.length || ans.some((a) => !Number.isInteger(a) || a < 0 || a >= (q.choices || []).length)) {
       problems.push("answer: invalid index(es)");
     }
-    if (!q.explanation) problems.push("missing explanation");
     if (q.fr) {
       if (typeof q.fr !== "object") problems.push("fr: must be an object");
       else if (q.fr.choices && (!Array.isArray(q.fr.choices) || q.fr.choices.length !== (q.choices || []).length)) {
@@ -72,7 +91,8 @@ window.QuizBank = (() => {
       return 0;
     }
     let added = 0;
-    for (const raw of list) {
+    for (const entry of list) {
+      const raw = normalize(entry, source);
       const problems = validate(raw);
       if (problems.length) {
         errors.push({ source, id: raw && raw.id, problems });
@@ -81,6 +101,7 @@ window.QuizBank = (() => {
       const q = {
         ...raw,
         answer: Array.isArray(raw.answer) ? [...raw.answer].sort((a, b) => a - b) : [raw.answer],
+        explanation: raw.explanation || "",
         source: raw.source || "",
         origin: source,
       };

@@ -431,7 +431,7 @@
       feedbackHtml = `
         <div class="feedback ${ok ? "ok" : "ko"}">
           <strong class="title">${ok ? t("correct") : item.selected.length ? t("wrong") : t("skipped")} — ${t("answerIs", multi)} : ${q.answer.map((a) => LETTERS[item.order.indexOf(a)]).join(", ")}</strong>
-          <div>${fmt(qt(q, "explanation"))}</div>
+          ${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}
           ${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}
         </div>`;
     }
@@ -518,7 +518,7 @@
             <div class="badges"><span class="badge ${ok ? "" : "accent"}">${ok ? "✓ " + t("correct") : "✗ " + t("wrong")}</span><span class="badge">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span></div>
             <p class="qtext">${i + 1}. ${fmt(qt(q, "question"))}</p>
             <ul class="choices">${it.order.map((ci, pos) => { const sel = it.selected.includes(ci), cor = q.answer.includes(ci); const cls = sel && cor ? "correct" : sel ? "wrong" : cor ? "missed" : ""; return `<li><button class="choice ${cls}" disabled><span class="key">${LETTERS[pos]}</span><span>${fmt(choices[ci])}</span></button></li>`; }).join("")}</ul>
-            <div class="feedback neutral"><div>${fmt(qt(q, "explanation"))}</div>${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}</div>
+            ${qt(q, "explanation") || q.source ? `<div class="feedback neutral">${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}</div>` : ""}
           </div>`;
         }).join("") : `<p class="muted">${t("noErrors")}</p>`}
       </section>

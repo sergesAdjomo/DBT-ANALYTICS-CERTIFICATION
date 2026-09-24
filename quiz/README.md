@@ -63,6 +63,14 @@ Les questions mal formées (id en double, index de réponse hors bornes, champ m
 
 Bouton « Importer un JSON » sur l'écran d'accueil : un tableau de questions au même format. « Télécharger un modèle JSON » fournit un exemple. Ces questions sont stockées dans le navigateur et peuvent être retirées d'un clic.
 
+Le format « banque de questions » est aussi accepté tel quel et converti automatiquement :
+
+```json
+{ "question_number": 12, "question": "…", "options": { "A": "…", "B": "…" }, "correct_answer": "B" }
+```
+
+(`correct_answer` peut être une liste, ex. `["B", "C"]`). Sans `module` ni `topic`, la question est rangée dans « Non classé » ; sans `explanation`, la correction affiche seulement la bonne réponse.
+
 ## Modules (domaines officiels de l'examen)
 
 | id             | Domaine                                   |
