@@ -222,6 +222,21 @@ input[type="number"] {
 
 .hidden-input { display: none; }
 
+/* Confirmation dialog */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.45);
+  display: grid; place-items: center; padding: 16px;
+}
+.modal {
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px; width: 100%; max-width: 440px;
+}
+.modal p { margin: 0 0 16px; }
+.btn.danger-fill { background: var(--ko); border-color: var(--ko); }
+.btn.danger-fill:hover { background: var(--ko); border-color: var(--ko); filter: brightness(1.1); }
+
+.resume-card { border-color: var(--accent); }
+
 @media (max-width: 600px) {
   .bar { grid-template-columns: 1fr; gap: 4px; }
   .score-big { font-size: 2.4rem; }

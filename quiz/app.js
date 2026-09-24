@@ -69,6 +69,8 @@
       retryWrong: (n) => `Redo my ${n} mistake(s)`, newSession: "New session", home: "Home",
       byModuleTitle: "By module", review: "Question review", errors: (n) => `Mistakes (${n})`, allQ: (n) => `All (${n})`, noErrors: "No mistakes, well done.",
       confirmHome: "Leave the current session? It will be kept for later.", confirmAbandon: "Abandon the current session?",
+      confirmLeaveExam: "Leave the exam? Your answers are kept and you can resume from the home page — the timer keeps running.",
+      cancel: "Cancel", ok: "OK",
       confirmFinish: (n) => `${n} unanswered question(s). Finish anyway?`, confirmQuit: "End practice and see the results?",
       confirmClearHistory: "Clear the score history?", confirmClearImport: "Remove all imported questions?",
       footer: (n) => `Question bank: ${n} questions · Exam pass mark: 65 %`,
@@ -118,6 +120,8 @@
       retryWrong: (n) => `Refaire mes ${n} erreur(s)`, newSession: "Nouvelle session", home: "Accueil",
       byModuleTitle: "Par module", review: "Revue des questions", errors: (n) => `Erreurs (${n})`, allQ: (n) => `Toutes (${n})`, noErrors: "Aucune erreur, bravo.",
       confirmHome: "Quitter la session en cours ? Elle sera conservée pour reprise.", confirmAbandon: "Abandonner la session en cours ?",
+      confirmLeaveExam: "Quitter l'examen ? Vos réponses sont conservées et vous pourrez reprendre depuis l'accueil — le chrono continue de tourner.",
+      cancel: "Annuler", ok: "OK",
       confirmFinish: (n) => `${n} question(s) sans réponse. Terminer quand même ?`, confirmQuit: "Terminer l'entraînement et voir le bilan ?",
       confirmClearHistory: "Effacer l'historique des scores ?", confirmClearImport: "Retirer toutes les questions importées ?",
       footer: (n) => `Banque de questions : ${n} questions · Seuil de réussite de l'examen : 65 %`,
@@ -184,7 +188,7 @@
     store.get(LS.setup, {})
   );
   let session = store.get(LS.session, null);
-  let view = session && !session.finished ? "resume" : "setup";
+  let view = "setup";
   let reviewFilter = "wrong";
   let timerHandle = null;
 
@@ -282,6 +286,40 @@
   }
   function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; }
 
+  // ---------- Confirmation dialog ----------
+  // In-page replacement for window.confirm(), which some browsers and embedded
+  // previews block silently (it then returns false and the action never runs).
+  let modalOpen = false;
+  function ask(message, okLabel, { danger = false } = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.innerHTML = `
+        <div class="modal" role="dialog" aria-modal="true">
+          <p>${esc(message)}</p>
+          <div class="row" style="justify-content:flex-end">
+            <button class="btn" data-modal="cancel">${t("cancel")}</button>
+            <button class="btn primary ${danger ? "danger-fill" : ""}" data-modal="ok">${esc(okLabel || t("ok"))}</button>
+          </div>
+        </div>`;
+      const close = (value) => { modalOpen = false; document.removeEventListener("keydown", onKey, true); overlay.remove(); resolve(value); };
+      const onKey = (e) => {
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(false); }
+        else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); close(true); }
+      };
+      overlay.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const b = e.target.closest("[data-modal]");
+        if (b) close(b.dataset.modal === "ok");
+        else if (e.target === overlay) close(false);
+      });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(overlay);
+      modalOpen = true;
+      overlay.querySelector('[data-modal="ok"]').focus();
+    });
+  }
+
   // ---------- Rendering ----------
   const langButton = () => `<button class="btn ghost small lang" data-action="lang" title="${esc(t("langTitle"))}">${t("langBtn")}</button>`;
 
@@ -291,7 +329,6 @@
     topbarRight.innerHTML = "";
     document.getElementById("bank-footer").textContent = t("footer", bank().length);
     if (view === "setup") renderSetup();
-    else if (view === "resume") renderResume();
     else if (view === "quiz") renderQuiz();
     else if (view === "results") renderResults();
     if (!topbarRight.querySelector(".lang")) topbarRight.insertAdjacentHTML("beforeend", langButton());
@@ -315,6 +352,7 @@
         : "";
 
     app.innerHTML = `
+      ${resumeCard()}
       <h1>${t("title")}</h1>
       <p class="lead">${t("lead")}</p>
 
@@ -385,11 +423,13 @@
     `;
   }
 
-  function renderResume() {
+  // Card shown at the top of the home screen when a session is unfinished.
+  function resumeCard() {
+    if (!session || session.finished) return "";
     const answered = session.items.filter((it) => it.validated || it.selected.length).length;
     const left = session.mode === "exam" ? session.endAt - Date.now() : 0;
-    app.innerHTML = `
-      <section class="card">
+    return `
+      <section class="card resume-card">
         <h2>${t("sessionInProgress")}</h2>
         <p class="hint">${t("modeLabel", session.mode)} · ${esc(describeSelection())} · ${t("answeredOf", answered, session.items.length)}${session.mode === "exam" ? ` · ${left > 0 ? t("remaining", fmtTime(left)) : t("timeUp")}` : ""}</p>
         <div class="row">
@@ -410,7 +450,7 @@
     const choices = qt(q, "choices");
 
     topbarRight.innerHTML = exam
-      ? `<span class="small">${t("answeredOf", answeredCount, n)}</span><span class="timer" id="timer">--:--</span><button class="btn small" data-action="finish-confirm">${t("finish")}</button>`
+      ? `<span class="small">${t("answeredOf", answeredCount, n)}</span><span class="timer" id="timer">--:--</span><button class="btn ghost small" data-action="leave-exam">${t("quit")}</button><button class="btn small" data-action="finish-confirm">${t("finish")}</button>`
       : `<span class="small">${t("practiceProgress", session.items.filter((it) => it.validated).length, n)}</span><button class="btn ghost small" data-action="quit-confirm">${t("quit")}</button>`;
 
     const choicesHtml = item.order.map((ci, pos) => {
@@ -432,7 +472,7 @@
         <div class="feedback ${ok ? "ok" : "ko"}">
           <strong class="title">${ok ? t("correct") : item.selected.length ? t("wrong") : t("skipped")} — ${t("answerIs", multi)} : ${q.answer.map((a) => LETTERS[item.order.indexOf(a)]).join(", ")}</strong>
           ${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}
-          ${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}
+          ${q.source ? `<div class="src"><a class="doc-link" href="${esc(q.source)}" target="_blank" rel="noopener noreferrer">${t("docLink")}</a></div>` : ""}
         </div>`;
     }
 
@@ -518,7 +558,7 @@
             <div class="badges"><span class="badge ${ok ? "" : "accent"}">${ok ? "✓ " + t("correct") : "✗ " + t("wrong")}</span><span class="badge">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span></div>
             <p class="qtext">${i + 1}. ${fmt(qt(q, "question"))}</p>
             <ul class="choices">${it.order.map((ci, pos) => { const sel = it.selected.includes(ci), cor = q.answer.includes(ci); const cls = sel && cor ? "correct" : sel ? "wrong" : cor ? "missed" : ""; return `<li><button class="choice ${cls}" disabled><span class="key">${LETTERS[pos]}</span><span>${fmt(choices[ci])}</span></button></li>`; }).join("")}</ul>
-            ${qt(q, "explanation") || q.source ? `<div class="feedback neutral">${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}${q.source ? `<div class="src"><a href="${esc(q.source)}" target="_blank" rel="noopener">${t("docLink")}</a></div>` : ""}</div>` : ""}
+            ${qt(q, "explanation") || q.source ? `<div class="feedback neutral">${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}${q.source ? `<div class="src"><a class="doc-link" href="${esc(q.source)}" target="_blank" rel="noopener noreferrer">${t("docLink")}</a></div>` : ""}</div>` : ""}
           </div>`;
         }).join("") : `<p class="muted">${t("noErrors")}</p>`}
       </section>
@@ -569,7 +609,15 @@
   // ---------- Actions ----------
   const actions = {
     lang() { lang = lang === "en" ? "fr" : "en"; store.set(LS.lang, lang); render(); },
-    home() { if (session && !session.finished && view === "quiz" && !confirm(t("confirmHome"))) return; view = session && !session.finished ? "resume" : "setup"; render(); },
+    async home() {
+      if (view === "setup") return;
+      if (session && !session.finished && view === "quiz" && !(await ask(t("confirmHome"), t("home")))) return;
+      view = "setup"; render();
+    },
+    async "leave-exam"() {
+      if (!(await ask(t("confirmLeaveExam"), t("quit")))) return;
+      view = "setup"; render();
+    },
     seltype(el) { setup.selType = el.dataset.id; if (setup.selType === "random") setup.count = Math.min(EXAM_QUESTIONS, bank().length); else setup.count = pool().length; saveSetup(); render(); },
     "toggle-module"(el) { const id = el.dataset.id; setup.modules = setup.modules.includes(id) ? setup.modules.filter((m) => m !== id) : [...setup.modules, id]; setup.count = pool().length; saveSetup(); render(); },
     "toggle-topic"(el) { const id = el.dataset.id; setup.topics = setup.topics.includes(id) ? setup.topics.filter((x) => x !== id) : [...setup.topics, id]; setup.count = pool().length; saveSetup(); render(); },
@@ -579,7 +627,7 @@
     "minutes-auto"(_, silent) { const n = Math.min(setup.count || pool().length, pool().length); setup.minutes = Math.max(5, Math.round((n * EXAM_MINUTES) / EXAM_QUESTIONS)); saveSetup(); if (!silent) render(); },
     start() { readSetupInputs(); start(); },
     resume() { view = "quiz"; render(); },
-    abandon() { if (!confirm(t("confirmAbandon"))) return; session = null; saveSession(); view = "setup"; render(); },
+    async abandon() { if (!(await ask(t("confirmAbandon"), t("abandon"), { danger: true }))) return; session = null; saveSession(); view = "setup"; render(); },
     choose(el) {
       const item = session.items[session.idx]; const q = byId(item.id); const ci = +el.dataset.ci;
       if (item.validated && session.mode !== "exam") return;
@@ -593,17 +641,17 @@
     prev() { if (session.idx > 0) { session.idx--; saveSession(); renderQuiz(); window.scrollTo({ top: 0 }); } },
     goto(el) { session.idx = +el.dataset.i; saveSession(); renderQuiz(); window.scrollTo({ top: 0 }); },
     flag() { const item = session.items[session.idx]; item.flagged = !item.flagged; saveSession(); renderQuiz(); },
-    "finish-confirm"() {
+    async "finish-confirm"() {
       const left = session.items.filter((it) => !it.selected.length && !it.validated).length;
-      if (left && !confirm(t("confirmFinish", left))) return;
+      if (left && !(await ask(t("confirmFinish", left), t("finish")))) return;
       finish();
     },
-    "quit-confirm"() { if (!confirm(t("confirmQuit"))) return; finish(); },
+    async "quit-confirm"() { if (!(await ask(t("confirmQuit"), t("finish")))) return; finish(); },
     "retry-wrong"() { const ids = session.items.filter((it) => !isCorrect(it)).map((it) => it.id); startFrom(ids, "train"); },
     filter(el) { reviewFilter = el.dataset.id; renderResults(); },
-    "clear-history"() { if (confirm(t("confirmClearHistory"))) { store.del(LS.history); render(); } },
+    async "clear-history"() { if (await ask(t("confirmClearHistory"), t("clearHistory"), { danger: true })) { store.del(LS.history); render(); } },
     import() { document.getElementById("import-file").click(); },
-    "clear-import"() { if (!confirm(t("confirmClearImport"))) return; QuizBank.remove("import"); store.del(LS.imported); imported.length = 0; render(); },
+    async "clear-import"() { if (!(await ask(t("confirmClearImport"), t("clearImport"), { danger: true }))) return; QuizBank.remove("import"); store.del(LS.imported); imported.length = 0; render(); },
     "export-template"() { exportTemplate(); },
   };
 
@@ -622,6 +670,13 @@
   }
 
   document.addEventListener("click", (e) => {
+    // Documentation links always open in a new tab, so the quiz in progress is never lost.
+    const link = e.target.closest("a.doc-link");
+    if (link) {
+      e.preventDefault();
+      window.open(link.href, "_blank", "noopener,noreferrer");
+      return;
+    }
     const el = e.target.closest("[data-action]");
     if (!el) return;
     e.preventDefault();
@@ -636,7 +691,7 @@
     }
   });
   document.addEventListener("keydown", (e) => {
-    if (view !== "quiz" || e.target.tagName === "INPUT") return;
+    if (modalOpen || view !== "quiz" || e.target.tagName === "INPUT") return;
     const item = session.items[session.idx];
     const key = e.key.toUpperCase();
     const pos = LETTERS.indexOf(key);
