@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:            # le quiz n'a pas d'impact sur dbt
+      - "quiz/**"
+      - ".github/workflows/quiz-pages.yml"
 
 jobs:
   dbt-run:
