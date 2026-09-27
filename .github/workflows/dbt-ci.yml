@@ -1,12 +1,15 @@
 name: dbt CI
 
+# Déclenchement automatique désactivé : l'essai Snowflake est terminé.
+# Pour réactiver, décommenter le bloc pull_request.
 on:
-  pull_request:
-    branches:
-      - main
-    paths-ignore:            # le quiz n'a pas d'impact sur dbt
-      - "quiz/**"
-      - ".github/workflows/quiz-pages.yml"
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths-ignore:            # le quiz n'a pas d'impact sur dbt
+  #     - "quiz/**"
+  #     - ".github/workflows/quiz-pages.yml"
+  workflow_dispatch:
 
 jobs:
   dbt-run:
