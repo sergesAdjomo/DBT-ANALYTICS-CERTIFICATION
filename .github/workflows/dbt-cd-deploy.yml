@@ -3,6 +3,9 @@ name: dbt prod Deploy
 on:
   push:
     branches: [ "main" ]   # runs after PR merge (push to main branch)
+    paths-ignore:          # le quiz n'a pas d'impact sur dbt
+      - "quiz/**"
+      - ".github/workflows/quiz-pages.yml"
   workflow_dispatch:
 
 concurrency:

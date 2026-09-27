@@ -40,6 +40,10 @@ eth/
 └── snapshots/              # Snapshots (SCD Type 2)
 ```
 
+## Quiz de révision
+
+Le dossier [`quiz/`](quiz/README.md) contient une application web statique (ouvrir `quiz/index.html`) pour s'entraîner à l'examen : questions aléatoires, par module ou par sujet, en mode entraînement (correction immédiate) ou examen chronométré. Voir `quiz/README.md` pour ajouter des questions.
+
 ## Rôle des fichiers principaux
 
 ### `dbt_project.yml`
