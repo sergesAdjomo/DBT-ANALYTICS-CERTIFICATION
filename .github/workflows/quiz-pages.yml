@@ -1,0 +1,39 @@
+name: Quiz - GitHub Pages
+
+# Publie le dossier quiz/ sur GitHub Pages à chaque modification sur main.
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "quiz/**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: quiz-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload quiz
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: quiz
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

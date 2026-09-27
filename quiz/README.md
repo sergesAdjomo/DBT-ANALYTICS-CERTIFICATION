@@ -4,15 +4,16 @@ Application web statique (HTML + CSS + JS, sans dépendance ni build) pour révi
 
 ## Lancer
 
-Ouvrir `quiz/index.html` dans un navigateur suffit (double-clic). Pour un serveur local :
+**En ligne (PC, téléphone, tablette)** : https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/ — rien à installer ni à lancer.
 
-```bash
-cd quiz && python -m http.server 8765
-```
+Le site est publié automatiquement par le workflow `.github/workflows/quiz-pages.yml` à chaque modification de `quiz/` sur `main`. Activation unique : *Settings → Pages → Build and deployment → Source : GitHub Actions*.
 
-puis http://localhost:8765.
+**En local** : aucun serveur n'est nécessaire, le quiz est une page statique.
 
-Le dossier peut aussi être publié tel quel via GitHub Pages (Settings → Pages → branche `main`, dossier `/quiz` ou racine).
+- Windows : double-cliquer sur `quiz/lancer.bat` (ou directement sur `quiz/index.html`).
+- macOS / Linux : `sh quiz/lancer.sh`.
+
+Note : la progression et l'historique sont enregistrés dans le navigateur utilisé ; ils ne se synchronisent pas entre le PC et le téléphone.
 
 ## Fonctionnement
 
