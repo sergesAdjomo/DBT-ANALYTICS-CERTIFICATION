@@ -3,12 +3,26 @@
 Projet dbt de lab pour la certification dbt Analytics Engineer.
 Données Ethereum : contrats, transactions et token transfers.
 
+## Lancer le quiz
+
+**Lien unique pour tous les appareils : [👉 ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/)**
+
+| Appareil | En ligne (recommandé) | Hors ligne |
+|---|---|---|
+| PC Windows | [Ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) dans Edge ou Chrome. Pour l'avoir comme une appli : menu ⋯ → *Applications → Installer ce site en tant qu'application*. | [Télécharger le projet (.zip)](https://github.com/sergesAdjomo/DBT-ANALYTICS-CERTIFICATION/archive/refs/heads/main.zip), dézipper, double-cliquer sur `quiz/lancer.bat` |
+| Mac | [Ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) dans Safari ou Chrome. Safari : *Fichier → Ajouter au Dock*. | [Télécharger le projet (.zip)](https://github.com/sergesAdjomo/DBT-ANALYTICS-CERTIFICATION/archive/refs/heads/main.zip), dézipper, double-cliquer sur `quiz/lancer-mac.command` (premier lancement : clic droit → *Ouvrir*) |
+| Linux | [Ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) | `sh quiz/lancer.sh` |
+| iPhone / iPad | [Ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) dans Safari, puis Partager → *Sur l'écran d'accueil* : une icône « dbt Quiz » apparaît comme une appli. | — |
+| Android | [Ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) dans Chrome, puis menu ⋮ → *Ajouter à l'écran d'accueil* (ou *Installer l'application*). | — |
+
+Aucun serveur, compte ou installation n'est nécessaire. La progression et l'historique sont enregistrés dans le navigateur de chaque appareil (pas de synchronisation entre PC et téléphone).
+
 ## Liens rapides
 
 | | Lien |
 |---|---|
 | Quiz en ligne (PC, téléphone) | https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/ |
-| Quiz en local | [`quiz/index.html`](quiz/index.html) · lanceurs [`quiz/lancer.bat`](quiz/lancer.bat) (Windows) / [`quiz/lancer.sh`](quiz/lancer.sh) (macOS, Linux) |
+| Quiz en local | [`quiz/index.html`](quiz/index.html) · lanceurs [`lancer.bat`](quiz/lancer.bat) (Windows) / [`lancer-mac.command`](quiz/lancer-mac.command) (Mac) / [`lancer.sh`](quiz/lancer.sh) (Linux) |
 | Mode d'emploi du quiz et ajout de questions | [`quiz/README.md`](quiz/README.md) |
 | Fiches de révision | [Sections 10 à 15](#fiches-de-révision) · [seeds](seeds/revision.md) · [snapshots](snapshots/revision.md) · [tests](tests/revision.md) |
 | Workflows GitHub Actions | [`.github/workflows/`](.github/workflows/) |
@@ -46,7 +60,7 @@ DBT-ANALYTICS-CERTIFICATION/
 
 ## Quiz de révision
 
-Application web statique pour s'entraîner à l'examen : 140 questions en anglais (bouton FR/EN), sélection aléatoire, par module ou par sujet, en mode entraînement (correction immédiate) ou examen chronométré.
+Application web statique pour s'entraîner à l'examen : 174 questions en anglais (bouton FR/EN), sélection aléatoire, par module ou par sujet, en mode entraînement (correction immédiate) ou examen chronométré.
 
 - **En ligne** : https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/ — rien à installer, fonctionne sur téléphone.
 - **En local** : double-cliquer sur [`quiz/lancer.bat`](quiz/lancer.bat) ou [`quiz/index.html`](quiz/index.html) (aucun serveur nécessaire).

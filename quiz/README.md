@@ -4,14 +4,15 @@ Application web statique (HTML + CSS + JS, sans dépendance ni build) pour révi
 
 ## Lancer
 
-**En ligne (PC, téléphone, tablette)** : https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/ — rien à installer ni à lancer.
+**En ligne (PC, Mac, téléphone, tablette)** : [ouvrir le quiz](https://sergesadjomo.github.io/DBT-ANALYTICS-CERTIFICATION/) — rien à installer ni à lancer. Le tableau par appareil (dont l'installation sur l'écran d'accueil du téléphone) est dans le [README principal](../README.md#lancer-le-quiz).
 
-Le site est publié automatiquement par le workflow `.github/workflows/quiz-pages.yml` à chaque modification de `quiz/` sur `main`. Activation unique : *Settings → Pages → Build and deployment → Source : GitHub Actions*.
+Le site est publié automatiquement par le workflow [`quiz-pages.yml`](../.github/workflows/quiz-pages.yml) à chaque modification de `quiz/` sur `main`, et peut être relancé à la main depuis *Actions → Quiz - GitHub Pages → Run workflow*. Prérequis (une seule fois) : *Settings → Pages → Source : GitHub Actions*.
 
 **En local** : aucun serveur n'est nécessaire, le quiz est une page statique.
 
-- Windows : double-cliquer sur `quiz/lancer.bat` (ou directement sur `quiz/index.html`).
-- macOS / Linux : `sh quiz/lancer.sh`.
+- Windows : double-cliquer sur [`lancer.bat`](lancer.bat) (ou directement sur `index.html`).
+- Mac : double-cliquer sur [`lancer-mac.command`](lancer-mac.command) (premier lancement : clic droit → *Ouvrir*).
+- Linux : `sh quiz/lancer.sh`.
 
 Note : la progression et l'historique sont enregistrés dans le navigateur utilisé ; ils ne se synchronisent pas entre le PC et le téléphone.
 
