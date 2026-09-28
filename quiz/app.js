@@ -486,7 +486,7 @@
       <div class="progress"><div style="width:${pct(session.idx + (item.validated ? 1 : 0), n)}%"></div></div>
       <section class="card">
         <div class="badges"><span class="badge accent">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span>${item.flagged ? `<span class="badge" style="background:var(--warn-soft);color:var(--warn)">${t("flagged")}</span>` : ""}</div>
-        <p class="qtext">${session.idx + 1}. ${fmt(qt(q, "question"))}</p>
+        <div class="qtext">${session.idx + 1}. ${fmt(qt(q, "question"))}</div>
         <p class="qmeta">${multi ? t("selectN", q.answer.length) : t("selectOne")} <span class="muted">${t("shortcuts", LETTERS[q.choices.length - 1])}</span></p>
         <ul class="choices">${choicesHtml}</ul>
         ${feedbackHtml}
@@ -556,7 +556,7 @@
           const q = byId(it.id); const ok = isCorrect(it); const choices = qt(q, "choices");
           return `<div class="review-item">
             <div class="badges"><span class="badge ${ok ? "" : "accent"}">${ok ? "✓ " + t("correct") : "✗ " + t("wrong")}</span><span class="badge">${esc(moduleLabel(q.module))}</span><span class="badge">${esc(topicLabel(q))}</span></div>
-            <p class="qtext">${i + 1}. ${fmt(qt(q, "question"))}</p>
+            <div class="qtext">${i + 1}. ${fmt(qt(q, "question"))}</div>
             <ul class="choices">${it.order.map((ci, pos) => { const sel = it.selected.includes(ci), cor = q.answer.includes(ci); const cls = sel && cor ? "correct" : sel ? "wrong" : cor ? "missed" : ""; return `<li><button class="choice ${cls}" disabled><span class="key">${LETTERS[pos]}</span><span>${fmt(choices[ci])}</span></button></li>`; }).join("")}</ul>
             ${qt(q, "explanation") || q.source ? `<div class="feedback neutral">${qt(q, "explanation") ? `<div>${fmt(qt(q, "explanation"))}</div>` : ""}${q.source ? `<div class="src"><a class="doc-link" href="${esc(q.source)}" target="_blank" rel="noopener noreferrer">${t("docLink")}</a></div>` : ""}</div>` : ""}
           </div>`;
